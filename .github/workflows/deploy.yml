@@ -34,6 +34,21 @@ jobs:
       - name: Trigger deployment
         if: ${{ !contains(toJson(github.event.commits.*.message),'#skip') }}
         run: curl https://api.render.com/deploy/srv-${{ secrets.MY_RENDER_SERVICE_ID }}?key=${{ secrets.MY_RENDER_API_KEY }}
+      - name: Deployment Success
+        uses: rjstone/discord-webhook-notify@v1.0.4
+        if: ${{ success() }}
+        with:
+          severity: info
+          details: Deployment Succeeded!
+          webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
+      - name: Deployment Failure
+        uses: rjstone/discord-webhook-notify@v1.0.4
+        if: ${{ failure() }}
+        with:
+          severity: error
+          details: Deployment Failed!
+          description: commit ${{ toJson(github.event.commits[-1].url) }} by ${{ toJson(github.event.commits[-1].author.name) }} broke the build
+          webhookUrl: ${{ secrets.DISCORD_WEBHOOK }}
 
   tag_release:
     if: ${{ github.event_name == 'push' && !contains(toJson(github.event.commits.*.message),'#skip') }}
@@ -46,3 +61,6 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DEFAULT_BUMP: patch
+# - name: Discord Webhook Notify
+
+#   uses: rjstone/discord-webhook-notify@v1.0.4
